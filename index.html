@@ -186,6 +186,40 @@
   }
   .close-btn:hover { color: #fff; }
 
+  /* Badges row */
+  #ip-badges {
+    display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-radioactive { background: rgba(255,80,80,0.2); border: 1px solid #ff5050; color: #ff8080; }
+  .badge-synthetic   { background: rgba(80,200,255,0.15); border: 1px solid #4fc3f7; color: #4fc3f7; }
+  .badge-magnetic    { background: rgba(180,100,255,0.2); border: 1px solid #b46aff; color: #cc99ff; }
+  .badge-noble-gas   { background: rgba(255,200,50,0.15); border: 1px solid #ffc83d; color: #ffc83d; }
+  .badge-toxic       { background: rgba(100,220,100,0.15); border: 1px solid #64dc64; color: #90ee90; }
+  .badge-precious    { background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #ffd700; }
+  .badge-biological  { background: rgba(50,200,150,0.2); border: 1px solid #32c896; color: #32c896; }
+  .badge-conductor   { background: rgba(255,165,0,0.2); border: 1px solid #ffa500; color: #ffa500; }
+  .badge-supercon    { background: rgba(100,200,255,0.2); border: 1px solid #64c8ff; color: #64c8ff; }
+  .badge-ancient     { background: rgba(200,180,100,0.2); border: 1px solid #c8b464; color: #c8b464; }
+
+  /* Enriched info section */
+  #ip-extra { margin-top: 8px; flex: 1; min-width: 160px; }
+  .info-bar-row { margin: 4px 0; }
+  .info-bar-label { font-size: 10px; color: #8888bb; margin-bottom: 2px; direction: rtl; }
+  .info-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; width: 120px; }
+  .info-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+  /* Fun fact */
+  #ip-fact { margin-top: 8px; font-size: 12px; color: #aab0cc; font-style: italic; direction: rtl; max-width: 340px; line-height: 1.5; border-right: 3px solid #4fc3f7; padding-right: 8px; }
+
+  /* Element card mini-icons */
+  .el-icons { position: absolute; bottom: 2px; left: 0; right: 0; display: flex; justify-content: center; gap: 2px; font-size: 13px; line-height: 1; }
+  .el-icon { opacity: 0.95; font-size: 13px; }
+
   .sep-label {
     grid-column: 1 / span 2;
     display: flex;
@@ -239,6 +273,14 @@
     <div class="legend-color" style="background:#ff8a80;width:8px;height:8px;border-radius:50%;"></div>גז
   </div>
 </div>
+<div class="legend" style="font-size:10px; padding-top:0; gap:6px;">
+  <span style="color:#666;">סמלים על הכרטיסים:</span>
+  <span style="color:#ff8080;">☢️ רדיואקטיבי</span>
+  <span style="color:#4fc3f7;">⚗ סינתטי</span>
+  <span style="color:#cc99ff;">🧲 מגנטי</span>
+  <span style="color:#ffd700;">✦ מתכת יקרה</span>
+  <span style="color:#32c896;">🧬 חיוני לחיים</span>
+</div>
 
 <div class="table-wrapper">
   <div class="periodic-table" id="ptable"></div>
@@ -250,8 +292,11 @@
   <div class="info-main">
     <div class="info-name" id="ip-name"></div>
     <div class="info-name-en" id="ip-name-en"></div>
+    <div id="ip-badges"></div>
     <div class="info-grid" id="ip-grid"></div>
   </div>
+  <div id="ip-extra"></div>
+  <div id="ip-fact"></div>
 </div>
 
 <script>
@@ -413,23 +458,94 @@ const catNames = {
 };
 const stateNames = { 'solid':'מוצק','liquid':'נוזל','gas':'גז','unknown':'לא ידוע' };
 
+// --- Enrichment data ---
+const radioactive = new Set([43,61,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118]);
+const synthetic   = new Set([43,61,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118]);
+const magnetic    = new Set([26,27,28,60,62,64,66,67,68]);
+const toxic       = new Set([4,33,48,56,80,81,82,83,33,34]);
+const precious    = new Set([44,45,46,47,78,79]);
+const biological  = new Set([1,6,7,8,11,12,15,16,17,19,20,25,26,27,28,29,30,34,53]);
+const conductor   = new Set([29,47,79,13,26,28,30,47,78,82]);
+const supercon    = new Set([13,23,41,48,73,82,207]);
+const ancient     = new Set([6,7,8,16,26,29,47,50,51,79,80,82,83]);
+
+const elementFacts = {
+  1:  "המימן הוא היסוד הנפוץ ביותר ביקום — כ-75% מהמסה הגלויה.",
+  2:  "ההליום הוא היחיד שהתגלה תחילה בשמש, ורק אחר כך על פני כדור הארץ.",
+  6:  "הפחמן הוא בסיס כל החיים הידועים — יכול לבנות יותר תרכובות מכל יסוד אחר.",
+  7:  "כ-78% מאוויר כדור הארץ הוא חנקן. הוא חיוני לחומצות אמינו וDNA.",
+  8:  "החמצן שאנו נושמים נוצר כמעט כולו על ידי פוטוסינתזה של צמחים ואצות.",
+  11: "נתרן מגיב בעוצמה עם מים ויוצר להבה צהובה אופיינית.",
+  26: "הברזל ביותר מ-5% מקליפת כדור הארץ, והוא הכי נפוץ לפי מסה בכוכב שלנו.",
+  29: "הנחושת היא אחד המוליכים הטובים ביותר — מרבית החוטים החשמליים עשויים ממנה.",
+  47: "הכסף הוא המוליך הטוב ביותר מבין כל המתכות.",
+  79: "כל הזהב על פני כדור הארץ הגיע ממטאוריטים שפגעו לפני 3.9 מיליארד שנה.",
+  80: "הכספית היא המתכת היחידה שהיא נוזל בטמפרטורת החדר.",
+  36: "הקריפטון מהיר יותר מהאור — אחת ממטר הזהב הקטגוריות נגזרת מאורך גל שלו.",
+  86: "הרדון הוא הגז הנדיר המסוכן ביותר — נוצר מפירוק טבעי של אורניום ברדיום.",
+  92: "האורניום הוא דלק הכורים הגרעיניים. האנרגיה בגרם אחד שווה לטון פחם.",
+  94: "הפלוטוניום אינו קיים בטבע כמעט — הוא נוצר רק במכורים גרעיניים.",
+  43: "הטכנציום הוא היסוד הקל הראשון שאינו קיים בטבע — כולו מלאכותי.",
+  61: "הפרומתיום לא קיים בכדור הארץ — הוא נוצר רק כתוצר של ביקוע גרעיני.",
+  54: "זינון משמש בפנסי מכוניות (Xenon HID) ובמנועי לווייני חלל.",
+  3:  "הליתיום הוא היסוד המוצק הקל ביותר — קל מספיק לצוף על שמן.",
+  19: "האשלגן חיוני לפעימת הלב — מחסור בו עלול לגרום להפרעות קצב מסכנות חיים.",
+  53: "היוד חיוני לבלוטת התריס. מחסור בו הוא הגורם הנפוץ ביותר לפיגור שכלי בעולם.",
+  15: "הזרחן נמצא ב-DNA, ב-RNA ובממברנת התא — בלעדיו אין חיים אפשריים.",
+  14: "הצורן (סיליקון) הוא הבסיס של כל שבבי המחשב המודרניים.",
+  16: "הגופרית גרמה לריח הביצה הרקובה — ממשת הוולקנו עד לחומצה הגופרתית התעשייתית.",
+};
+
+function getElIcons(el) {
+  let icons = '';
+  if (radioactive.has(el.z)) icons += '<span class="el-icon" title="רדיואקטיבי">☢️</span>';
+  if (synthetic.has(el.z))   icons += '<span class="el-icon" title="סינתטי">⚗</span>';
+  if (magnetic.has(el.z))    icons += '<span class="el-icon" title="מגנטי">🧲</span>';
+  if (precious.has(el.z))    icons += '<span class="el-icon" title="מתכת יקרה">✦</span>';
+  if (biological.has(el.z))  icons += '<span class="el-icon" title="חיוני לחיים">🧬</span>';
+  return icons;
+}
+
+function makeBar(label, value, max, color) {
+  if (value === null || value === undefined) return '';
+  const pct = Math.min(100, Math.max(2, (value / max) * 100));
+  return `<div class="info-bar-row">
+    <div class="info-bar-label">${label}</div>
+    <div class="info-bar"><div class="info-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+  </div>`;
+}
+
 function showInfo(el) {
   const panel = document.getElementById('info-panel');
   document.getElementById('ip-symbol').textContent = el.sym;
   document.getElementById('ip-symbol').className = 'info-symbol ' + catClass(el.cat);
   document.getElementById('ip-name').textContent = el.he;
   document.getElementById('ip-name-en').textContent = el.en + ' — Z = ' + el.z;
-  
+
+  // --- Badges ---
+  let badges = '';
+  if (radioactive.has(el.z)) badges += `<span class="badge badge-radioactive">☢️ רדיואקטיבי</span>`;
+  if (synthetic.has(el.z))   badges += `<span class="badge badge-synthetic">⚗ סינתטי / מלאכותי</span>`;
+  if (magnetic.has(el.z))    badges += `<span class="badge badge-magnetic">🧲 מגנטי</span>`;
+  if (precious.has(el.z))    badges += `<span class="badge badge-precious">✦ מתכת יקרה</span>`;
+  if (biological.has(el.z))  badges += `<span class="badge badge-biological">🧬 חיוני לחיים</span>`;
+  if (toxic.has(el.z))       badges += `<span class="badge badge-toxic">☠ רעיל</span>`;
+  if (conductor.has(el.z))   badges += `<span class="badge badge-conductor">⚡ מוליך מצוין</span>`;
+  if (el.cat === 'noble')     badges += `<span class="badge badge-noble-gas">✨ גז אציל</span>`;
+  if (ancient.has(el.z) && el.yr === -1) badges += `<span class="badge badge-ancient">📜 ידוע מהעת העתיקה</span>`;
+  document.getElementById('ip-badges').innerHTML = badges;
+
+  // --- Text info ---
   let items = '';
   const add = (label, val) => { if (val !== null && val !== undefined) items += `<div class="info-item">${label}: <span>${val}</span></div>`; };
-  
+
   add('מסה אטומית', el.mass + ' u');
   add('קטגוריה', catNames[el.cat]);
-  add('מצב צבירה (25°C)', stateNames[el.state]);
+  const stateIcons = {solid:'🪨 מוצק', liquid:'💧 נוזל', gas:'💨 גז', unknown:'❓ לא ידוע'};
+  add('מצב צבירה (25°C)', stateIcons[el.state] || el.state);
   add('תצורת אלקטרונים', el.econfig);
-  add('בלוק', el.block);
-  add('מחזור', el.period);
-  add('קבוצה', el.group);
+  add('בלוק', el.block ? el.block.toUpperCase() : null);
+  add('מחזור / קבוצה', el.period + ' / ' + (el.group || '—'));
   if (el.eneg) add('אלקטרושליליות (פאולינג)', el.eneg);
   if (el.ox) add('מספרי חמצון', el.ox);
   if (el.mp !== null) add('נקודת היתוך', el.mp + ' °C');
@@ -437,9 +553,23 @@ function showInfo(el) {
   if (el.density) add('צפיפות', el.density + ' g/cm³');
   if (el.yr > 0) add('שנת גילוי', el.yr);
   else if (el.yr === -1) add('שנת גילוי', 'ידוע מקדמת דנא');
-  if (el.disc) add('מגלה', el.disc);
-  
+  if (el.disc && el.yr !== -1) add('מגלה', el.disc);
   document.getElementById('ip-grid').innerHTML = items;
+
+  // --- Visual bars ---
+  let extra = '<div style="margin-top:4px;">';
+  extra += makeBar('אלקטרושליליות', el.eneg, 4.0, '#a78bfa');
+  extra += makeBar('נקודת היתוך', el.mp !== null ? Math.max(0, el.mp) : null, 3700, '#f97316');
+  extra += makeBar('צפיפות (g/cm³)', el.density, 22.6, '#22d3ee');
+  extra += makeBar('מסה אטומית', el.mass, 294, '#86efac');
+  extra += '</div>';
+  document.getElementById('ip-extra').innerHTML = extra;
+
+  // --- Fun fact ---
+  const fact = elementFacts[el.z];
+  document.getElementById('ip-fact').innerHTML = fact ? `💡 ${fact}` : '';
+  document.getElementById('ip-fact').style.display = fact ? 'block' : 'none';
+
   panel.classList.add('active');
 }
 
@@ -477,12 +607,14 @@ for (let r = 1; r <= 10; r++) {
       const el = cells[key];
       const div = document.createElement('div');
       div.className = `element ${catClass(el.cat)} ${stateClass(el.state)}`;
+      const miniIcons = getElIcons(el);
       div.innerHTML = `
         <span class="number">${el.z}</span>
         <span class="state-dot"></span>
         <span class="symbol">${el.sym}</span>
         <span class="name-he">${el.he}</span>
         <span class="mass">${el.mass}</span>
+        ${miniIcons ? `<span class="el-icons">${miniIcons}</span>` : ''}
       `;
       div.style.gridRow = r <= 7 ? r : r;
       div.style.gridColumn = c;
